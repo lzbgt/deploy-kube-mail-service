@@ -1,0 +1,145 @@
+# mail-admin cluster
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: mail-admin
+  labels:
+    app: mail-admin
+spec:
+  selector:
+    app: mail-admin
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+    #nodePort: 30164
+  #type: NodePort
+---
+apiVersion: v1
+data:
+  application-default.yml: |-
+    server:
+      port: 80
+      tomcat:
+        uri-encoding: utf-8
+    eureka:
+      client:
+        serviceUrl:
+          defaultZone: eureka.client.serviceUrl.defaultZone=http://admin:123456@eureka-0.eureka:80/eureka/,http://admin:123456@eureka-1.eureka:80/eureka/,http://admin:123456@eureka-2.eureka:80/eureka/
+    bootdo:
+      uploadPath: /var/uploaded_files/
+    logging:
+      level:
+        root: error
+    mybatis: 
+      configuration:
+        map-underscore-to-camel-case: true
+      mapper-locations: mybatis/**/*Mapper.xml
+      typeAliasesPackage: com.bootdo.**.domain
+    spring:
+      application:
+        name: mail-admin
+      profiles: 
+        active: none
+      thymeleaf:
+        mode: LEGACYHTML5
+        cache: false
+      jackson:
+        time-zone: GMT+8
+        date-format: yyyy-MM-dd HH:mm:ss
+      http:
+        multipart:
+          max-file-size: 30Mb
+          max-request-size: 30Mb
+      devtools:
+        restart:
+          enabled: false
+      datasource:
+        type: com.alibaba.druid.pool.DruidDataSource
+        driverClassName: com.mysql.jdbc.Driver
+        url: jdbc:mysql://192.168.50.1:3306/bootdo?useUnicode=true&characterEncoding=utf8
+        username: bootdo
+        password: bootdo123qwe
+        initialSize: 1
+        minIdle: 3
+        maxActive: 20
+        # 配置获取连接等待超时的时间
+        maxWait: 60000
+        # 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒
+        timeBetweenEvictionRunsMillis: 60000
+        # 配置一个连接在池中最小生存的时间，单位是毫秒
+        minEvictableIdleTimeMillis: 30000
+        validationQuery: select 'x'
+        testWhileIdle: true
+        testOnBorrow: false
+        testOnReturn: false
+        # 打开PSCache，并且指定每个连接上PSCache的大小
+        poolPreparedStatements: true
+        maxPoolPreparedStatementPerConnectionSize: 20
+        # 配置监控统计拦截的filters，去掉后监控界面sql无法统计，'wall'用于防火墙
+        filters: stat,wall,slf4j
+        # 通过connectProperties属性来打开mergeSql功能；慢SQL记录
+        connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+kind: ConfigMap
+metadata:
+  name: mail-adminconfig
+---
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: mail-admin
+  labels:
+    app: mail-admin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mail-admin
+  template:
+    metadata:
+      labels:
+        app: mail-admin
+    spec:
+      containers:
+      - name: mail-admin
+        image: docker-registry.cluster.dfwsgroup.cn/library/mail-admin:1.0.0
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "300Mi"
+            cpu: "250m"
+          limits:
+            memory: "2000Mi"
+            cpu: "2000m"
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: mail-admin-config
+          mountPath: /config
+      volumes:
+      - name: mail-admin-config
+        configMap:
+          name: mail-adminconfig
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: mail-admin
+  annotations:
+    #kubernetes.io/tls-acme: "true"
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  #tls:
+  #- hosts:
+  #  - mail-admin.cluster.dfwsgroup.cn
+  #  secretName: mail-admin-tls
+  rules:
+  - host: mail-admin.cluster.dfwsgroup.cn
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: mail-admin
+          servicePort: 80
+

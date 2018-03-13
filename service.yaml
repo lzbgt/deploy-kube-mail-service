@@ -1,0 +1,62 @@
+# mail-service
+---
+apiVersion: v1
+data:
+  application.properties: |-
+    app.id=common-mailservice-001
+kind: ConfigMap
+metadata:
+  name: mail-service
+---
+apiVersion: v1
+data:
+  server.properties: |-
+    env=PRO
+kind: ConfigMap
+metadata:
+  name: mail-service-apollo
+---
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: mail-service
+  labels:
+    app: mail-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mail-service
+  template:
+    metadata:
+      labels:
+        app: mail-service
+    spec:
+      containers:
+      - name: mail-service
+        image: docker-registry.cluster.dfwsgroup.cn/library/mail-service:1.0.0
+        imagePullPolicy: Always
+        env:
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: appconfig
+          mountPath: /config
+        - name: appconfig-apollo
+          mountPath: /opt/settings
+        resources:
+          requests:
+            memory: "300Mi"
+            cpu: "250m"
+          limits:
+            memory: "2000Mi"
+            cpu: "2000m"
+      volumes:
+      - name: appconfig
+        configMap:
+          name: mail-service
+      - name: appconfig-apollo
+        configMap:
+          name: mail-service-apollo
+---
+
