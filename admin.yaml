@@ -18,7 +18,11 @@ spec:
 ---
 apiVersion: v1
 data:
-  application-default.yml: |-
+  application.yml: |-
+    spring:
+      profiles: 
+        active: kube
+  application-kube.yml: |-
     server:
       port: 80
       tomcat:
