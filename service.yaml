@@ -40,7 +40,6 @@ spec:
       - name: mail-service
         image: docker-registry.cluster.dfwsgroup.cn/library/mail-service:1.0.0
         imagePullPolicy: Always
-        env:
         ports:
         - containerPort: 80
         volumeMounts:

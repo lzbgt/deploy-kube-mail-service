@@ -4,10 +4,8 @@ apiVersion: v1
 data:
   application-kube.properties: |-
     app.id=common-mailserver-001
-  application.yml: |-
-    spring:
-      profiles: 
-        active: kube
+  application.properties: |-
+    spring.profiles.active= kube
 kind: ConfigMap
 metadata:
   name: mail-server
@@ -40,7 +38,6 @@ spec:
       - name: mail-server
         image: docker-registry.cluster.dfwsgroup.cn/library/mail-server:1.0.0
         imagePullPolicy: Always
-        env:
         ports:
         - containerPort: 80
         volumeMounts:
